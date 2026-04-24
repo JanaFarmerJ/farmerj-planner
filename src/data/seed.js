@@ -52,7 +52,7 @@ export const SHOPS = [
 ];
 
 export const USERS = [
-  {id:1, email:'jana@farmej.com',                name:'Jana',               role:'Admin',        password:'FarmerJ2026!', shops:'all', mustChangePassword:false},
+  {id:1, email:'jana@farmerj.com',                name:'Jana',               role:'Admin',        password:'FarmerJ2026!', shops:'all', mustChangePassword:false},
   {id:2, email:'headoffice@farmerj.com',         name:'Head Office',        role:'Head Office',  password:'FarmerJ2026!', shops:'all', mustChangePassword:true},
   {id:3, email:'ops.city@farmerj.com',           name:'City Ops',           role:'Ops Manager',  password:'FarmerJ2026!', shops:[1,4,5,6,11,17,20,21], mustChangePassword:true},
   {id:4, email:'ops.west@farmerj.com',           name:'West Ops',           role:'Ops Manager',  password:'FarmerJ2026!', shops:[7,12,13], mustChangePassword:true},
