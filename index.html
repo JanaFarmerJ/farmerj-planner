@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Farmer J — Production Planner</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+:root{--green:#1a7a4a;--green-light:#e8f5ee;--green-mid:#2d9e62;--amber:#c47d0e;--amber-light:#fdf3e0;--blue:#1a5fa8;--blue-light:#e8f0fb;--bg:#f5f4f0;--surface:#ffffff;--border:#e0ddd5;--border-s:#c8c4ba;--text:#1c1b18;--text2:#5a5750;--text3:#9a968e;--sw:220px;--font:'DM Sans',system-ui,sans-serif;--mono:'DM Mono',monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);font-size:14px;color:var(--text);background:var(--bg);line-height:1.5}
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:var(--sw);flex-shrink:0;background:var(--text);color:#fff;display:flex;flex-direction:column;overflow-y:auto}
+.brand{padding:20px 18px 16px;border-bottom:1px solid rgba(255,255,255,.1)}
+.brand .name{font-size:15px;font-weight:600;letter-spacing:-.02em}
+.brand .tag{font-size:11px;color:rgba(255,255,255,.4);margin-top:2px;font-family:var(--mono)}
+.ng{padding:10px 0 4px}
+.nl{padding:4px 18px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:2px}
+.ni{display:flex;align-items:center;gap:10px;padding:8px 18px;font-size:13px;color:rgba(255,255,255,.6);cursor:pointer;border-left:2px solid transparent;transition:all .12s}
+.ni:hover{color:#fff;background:rgba(255,255,255,.06)}
+.ni.active{color:#fff;background:rgba(255,255,255,.1);border-left-color:var(--green-mid)}
+.ni svg{flex-shrink:0;opacity:.7}.ni.active svg{opacity:1}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 24px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.topbar select,.topbar input[type=date]{font-family:var(--font);font-size:13px;padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);cursor:pointer}
+.topbar select:focus,.topbar input[type=date]:focus{outline:2px solid var(--green);outline-offset:1px}
+.day-badge{font-family:var(--mono);font-size:11px;background:var(--green-light);color:var(--green);padding:3px 9px;border-radius:20px;font-weight:500}
+.ml{margin-left:auto}
+.btn{font-family:var(--font);font-size:13px;font-weight:500;padding:6px 14px;border-radius:6px;border:1px solid var(--border-s);background:var(--surface);color:var(--text);cursor:pointer;transition:all .1s}
+.btn:hover{background:var(--bg)}.btn.p{background:var(--green);color:#fff;border-color:var(--green)}.btn.p:hover{background:var(--green-mid)}.btn.sm{padding:3px 10px;font-size:12px}.btn.gh{border-color:transparent;background:transparent}.btn.gh:hover{background:var(--bg)}
+.content{flex:1;overflow-y:auto;padding:24px}
+.page{display:none}.page.active{display:block}
+.ph{margin-bottom:20px}.ph h1{font-size:20px;font-weight:600;letter-spacing:-.02em}.ph p{font-size:13px;color:var(--text2);margin-top:3px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin-bottom:16px}
+.ch{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ct{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text2)}
+.fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px}
+.mc{background:var(--bg);border-radius:8px;padding:12px 14px}
+.ml2{font-size:11px;color:var(--text3);margin-bottom:6px}
+.mi{width:100%;font-size:20px;font-weight:600;font-family:var(--mono);background:transparent;border:none;border-bottom:1.5px solid var(--border);padding:2px 0;color:var(--text);outline:none;transition:border-color .15s}
+.mi:focus{border-bottom-color:var(--green)}
+.ar{display:flex;align-items:center;gap:10px;background:var(--amber-light);border:1px solid #f0d090;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px}
+.ar label{color:var(--amber);font-weight:500;white-space:nowrap}
+.ap{font-family:var(--mono);font-size:15px;font-weight:600;color:var(--amber);min-width:52px}
+.pt{width:100%;border-collapse:collapse;font-size:13px}
+.pt th{text-align:left;padding:6px 10px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);border-bottom:1px solid var(--border)}
+.pt td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+.pt tr:last-child td{border-bottom:none}.pt tbody tr:hover td{background:var(--bg)}
+.pluc{font-family:var(--mono);font-size:11px;color:var(--text3)}.nc{font-weight:500}.uc{color:var(--text2)}
+.qp{display:inline-flex;align-items:center;justify-content:center;min-width:44px;padding:3px 10px;border-radius:20px;font-family:var(--mono);font-size:13px;font-weight:500}
+.qhi{background:var(--green-light);color:var(--green)}.qme{background:var(--amber-light);color:var(--amber)}.qlo{background:var(--blue-light);color:var(--blue)}
+.bp{display:inline-block;font-size:11px;font-weight:500;padding:1px 7px;border-radius:4px;font-family:var(--mono)}
+.bf{background:var(--green-light);color:var(--green)}.bh{background:var(--amber-light);color:var(--amber)}
+.cbc input[type=checkbox]{width:17px;height:17px;cursor:pointer;accent-color:var(--green)}
+.tg{display:inline-block;font-size:11px;font-weight:500;padding:2px 7px;border-radius:4px}
+.tb{background:var(--blue-light);color:var(--blue)}.tl{background:var(--green-light);color:var(--green)}.tbl{background:var(--amber-light);color:var(--amber)}
+.fgrid{display:grid;gap:10px;margin-bottom:14px;align-items:end}
+.g4{grid-template-columns:1fr 1.8fr 1fr 1fr auto}
+.g3{grid-template-columns:1fr 1fr 1fr auto}
+.g5{grid-template-columns:1fr 1.5fr .8fr .8fr .8fr auto}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.field input,.field select{width:100%;font-family:var(--font);font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);transition:border-color .15s}
+.field input:focus,.field select:focus{outline:none;border-color:var(--green)}
+.uz{border:1.5px dashed var(--border-s);border-radius:8px;padding:28px 20px;text-align:center;color:var(--text2);cursor:pointer;transition:all .15s;background:var(--bg)}
+.uz:hover{border-color:var(--green);background:var(--green-light);color:var(--green)}
+.us{font-size:12px;color:var(--text2);margin-top:8px;font-family:var(--mono)}
+.at{width:100%;border-collapse:collapse;font-size:13px}
+.at th{text-align:left;padding:5px 10px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);border-bottom:1px solid var(--border)}
+.at td{padding:8px 10px;border-bottom:1px solid var(--border)}
+.at tr:last-child td{border-bottom:none}
+.mono{font-family:var(--mono)}
+.notice{background:var(--blue-light);color:var(--blue);border:1px solid #bcd4f5;border-radius:7px;padding:10px 14px;font-size:13px;margin-bottom:14px}
+.divider{border:none;border-top:1px solid var(--border);margin:16px 0}
+.er td{text-align:center;color:var(--text3);padding:24px;font-size:13px}
+.flex{display:flex;align-items:center}.g8{gap:8px}.g12{gap:12px}
+@media print{.sidebar,.topbar,.btn,.cbc,.fgrid,.uz{display:none!important}.main{display:block}.content{padding:0;overflow:visible}.page{display:block!important}.card{break-inside:avoid;border:1px solid #ccc;margin-bottom:12px}body{background:white;font-size:12px}.pt{font-size:11px}}
+</style>
+</head>
+<body>
+<div class="app">
+
+<nav class="sidebar">
+  <div class="brand"><div class="name">Farmer J</div><div class="tag">Production Planner</div></div>
+  <div class="ng">
+    <div class="nl">Prep Sheets</div>
+    <div class="ni active" data-page="breakfast" onclick="nav(this)">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 1.5"/></svg>Breakfast
+    </div>
+    <div class="ni" data-page="lunch" onclick="nav(this)">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4h10v1.5a5 5 0 0 1-10 0V4z"/><path d="M8 9.5V14M5 14h6"/></svg>Lunch
+    </div>
+  </div>
+  <div class="ng">
+    <div class="nl">Planning</div>
+    <div class="ni" data-page="forecast" onclick="nav(this)">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="2,12 5,8 8,10 12,5 14,7"/></svg>Forecast
+    </div>
+  </div>
+  <div class="ng">
+    <div class="nl">Admin</div>
+    <div class="ni" data-page="products" onclick="nav(this)">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>Products
+    </div>
+    <div class="ni" data-page="batches" onclick="nav(this)">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 5h12M2 8h12M2 11h12"/></svg>Batches
+    </div>
+    <div class="ni" data-page="shops" onclick="nav(this)">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 7l6-5 6 5v7H2V7z"/><path d="M6 14V9h4v5"/></svg>Shops
+    </div>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="topbar">
+    <select id="shop-sel" onchange="onShopChange()"></select>
+    <input type="date" id="date-sel" onchange="onDateChange()">
+    <span class="day-badge" id="day-badge">Monday</span>
+    <div class="ml flex g8">
+      <button class="btn sm" onclick="window.print()">Print sheet</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- BREAKFAST -->
+    <div id="page-breakfast" class="page active">
+      <div class="ph"><h1>Breakfast prep sheet</h1><p>7:00 – 11:00 · <span id="brfst-shop"></span></p></div>
+      <div class="ar">
+        <label>Forecast adjustment:</label>
+        <span class="ap" id="brfst-adj">100%</span>
+        <span style="font-size:12px;color:var(--amber)">Forecast £<span id="brfst-fcst">0</span> vs historical avg £<span id="brfst-hist">0</span></span>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">Finished items</span><span class="ml" style="font-size:12px;color:var(--text3)">avg sold → planned</span></div>
+        <table class="pt"><thead><tr><th style="width:90px">PLU</th><th>Item</th><th style="width:70px">Unit</th><th style="width:70px">Avg sold</th><th style="width:90px">Produce</th><th style="width:36px">✓</th></tr></thead><tbody id="bf-body"></tbody></table>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">Batch prep required</span><span class="ml" style="font-size:12px;color:var(--text3)">full / half batches</span></div>
+        <table class="pt"><thead><tr><th style="width:90px">PLU</th><th>Batch name</th><th style="width:70px">Unit</th><th style="width:90px">Qty needed</th><th style="width:120px">Batches</th><th style="width:36px">✓</th></tr></thead><tbody id="bb-body"></tbody></table>
+      </div>
+    </div>
+
+    <!-- LUNCH -->
+    <div id="page-lunch" class="page">
+      <div class="ph"><h1>Lunch prep sheet</h1><p>11:00 – 15:00 · <span id="lunch-shop"></span></p></div>
+      <div class="ar">
+        <label>Forecast adjustment:</label>
+        <span class="ap" id="lunch-adj">100%</span>
+        <span style="font-size:12px;color:var(--amber)">Forecast £<span id="lunch-fcst">0</span> vs historical avg £<span id="lunch-hist">0</span></span>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">Finished items + mains</span><span class="ml" style="font-size:12px;color:var(--text3)">avg sold → planned</span></div>
+        <table class="pt"><thead><tr><th style="width:90px">PLU</th><th>Item</th><th style="width:70px">Unit</th><th style="width:70px">Avg sold</th><th style="width:80px">Catering +</th><th style="width:90px">Produce</th><th style="width:36px">✓</th></tr></thead><tbody id="lf-body"></tbody></table>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">Batch prep required</span></div>
+        <table class="pt"><thead><tr><th style="width:90px">PLU</th><th>Batch name</th><th style="width:70px">Unit</th><th style="width:90px">Qty needed</th><th style="width:120px">Batches</th><th style="width:36px">✓</th></tr></thead><tbody id="lb-body"></tbody></table>
+      </div>
+    </div>
+
+    <!-- FORECAST -->
+    <div id="page-forecast" class="page">
+      <div class="ph"><h1>Forecast</h1><p>Set today's sales forecast — prep quantities recalculate automatically</p></div>
+      <div class="card">
+        <div class="ch"><span class="ct">Today's forecast — <span id="fcst-day"></span></span></div>
+        <div class="fg" id="fcst-inputs"></div>
+        <hr class="divider">
+        <div class="flex g12">
+          <span style="font-size:13px;color:var(--text2)">Total: <strong class="mono" id="fcst-total">£0</strong></span>
+          <button class="btn p ml" onclick="saveForecast()">Save & recalculate</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">Historical averages (this day of week)</span></div>
+        <div class="notice">These averages drive the <strong>Avg sold</strong> column on prep sheets. Upload a Syrve export below to refresh them.</div>
+        <table class="at"><thead><tr><th>Day part</th><th>Avg daily</th><th>% of day</th><th>Suggested forecast</th></tr></thead><tbody id="avg-body"></tbody></table>
+      </div>
+      <div class="card">
+        <div class="ch"><span class="ct">Upload historical data (Syrve CSV)</span></div>
+        <div class="uz" onclick="document.getElementById('csv-file').click()">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 8px;display:block"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <div style="font-weight:500">Drop Syrve CSV export here, or click to browse</div>
+          <div style="font-size:12px;margin-top:4px;opacity:.7">ProductHourlyNew format · averages calculated per day of week</div>
+        </div>
+        <input type="file" id="csv-file" accept=".csv" style="display:none" onchange="handleCSV(event)">
+        <div class="us" id="upload-status"></div>
+      </div>
+    </div>
+
+    <!-- PRODUCTS -->
+    <div id="page-products" class="page">
+      <div class="ph"><h1>Products</h1><p>Finished items sold to customers — appear on prep sheets</p></div>
+      <div class="card">
+        <div class="ch"><span class="ct">Add product</span></div>
+        <div class="fgrid g4">
+          <div class="field"><label>PLU</label><input id="p-plu" placeholder="e.g. 1002678"></div>
+          <div class="field"><label>Name</label><input id="p-name" placeholder="e.g. Toast Avo, Cucumber + Togarashi"></div>
+          <div class="field"><label>Day part</label><select id="p-dp"><option value="B">Breakfast</option><option value="L">Lunch</option><option value="BL">Both</option></select></div>
+          <div class="field"><label>Unit</label><input id="p-unit" placeholder="each / g / kg"></div>
+          <button class="btn p" style="align-self:flex-end" onclick="addProduct()">Add</button>
+        </div>
+      </div>
+      <div class="card">
+        <table class="pt"><thead><tr><th>PLU</th><th>Name</th><th>Day part</th><th>Unit</th><th style="width:80px">Avg today</th><th style="width:80px"></th></tr></thead><tbody id="prod-body"></tbody></table>
+      </div>
+    </div>
+
+    <!-- BATCHES -->
+    <div id="page-batches" class="page">
+      <div class="ph"><h1>Batches</h1><p>Batch items needed to deliver the menu — with batch sizes for full/half calculation</p></div>
+      <div class="card">
+        <div class="ch"><span class="ct">Add batch item</span></div>
+        <div class="fgrid g5">
+          <div class="field"><label>PLU</label><input id="b-plu" placeholder="e.g. 1002677"></div>
+          <div class="field"><label>Name</label><input id="b-name" placeholder="e.g. Overnight Oat BATCH"></div>
+          <div class="field"><label>Batch size</label><input id="b-size" type="number" placeholder="3665"></div>
+          <div class="field"><label>Unit</label><input id="b-unit" placeholder="g / kg / ea"></div>
+          <div class="field"><label>Day part</label><select id="b-dp"><option value="B">Breakfast</option><option value="L">Lunch</option><option value="BL">Both</option></select></div>
+          <button class="btn p" style="align-self:flex-end" onclick="addBatch()">Add</button>
+        </div>
+      </div>
+      <div class="card">
+        <table class="pt"><thead><tr><th>PLU</th><th>Name</th><th>Batch size</th><th>Unit</th><th>Day part</th><th></th></tr></thead><tbody id="batch-body"></tbody></table>
+      </div>
+    </div>
+
+    <!-- SHOPS -->
+    <div id="page-shops" class="page">
+      <div class="ph"><h1>Shops</h1><p>Manage the shop list</p></div>
+      <div class="card">
+        <div class="ch"><span class="ct">Add shop</span></div>
+        <div class="fgrid g3">
+          <div class="field"><label>Name</label><input id="s-name" placeholder="e.g. Regent St"></div>
+          <div class="field"><label>Region</label><input id="s-region" placeholder="e.g. Central London"></div>
+          <div class="field"><label>Volume</label><select id="s-par"><option>Standard</option><option>High volume</option><option>Low volume</option></select></div>
+          <button class="btn p" style="align-self:flex-end" onclick="addShop()">Add</button>
+        </div>
+      </div>
+      <div class="card">
+        <table class="pt"><thead><tr><th>Name</th><th>Region</th><th>Volume</th><th></th></tr></thead><tbody id="shops-body"></tbody></table>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<script>
+// ─── DEFAULT DATA (from Excel file) ───────────────────────────────────────────
+const DEF = {
+  shops:[
+    {name:'Holborn',region:'Central',par:'Standard'},
+    {name:'Coleman Street',region:'City',par:'Standard'},
+    {name:'Farringdon',region:'City',par:'Standard'},
+    {name:'Fenchurch',region:'City',par:'Standard'},
+    {name:'Hammersmith',region:'West',par:'Standard'},
+    {name:'Finsbury Avenue',region:'City',par:'Standard'},
+    {name:'Jubilee Place',region:'East',par:'Standard'},
+    {name:'London Bridge',region:'South',par:'Standard'},
+    {name:'Marylebone',region:'Central',par:'Standard'},
+    {name:'Old Broad Street',region:'City',par:'Standard'},
+    {name:'Piccadilly',region:'West',par:'High volume'},
+    {name:'Regent St',region:'West',par:'High volume'},
+    {name:'Russell Square',region:'Central',par:'Standard'},
+    {name:'St Paul\'s',region:'City',par:'Standard'},
+    {name:'Strand',region:'Central',par:'Standard'},
+    {name:'Tottenham Court Road',region:'Central',par:'Standard'},
+  ],
+  products:[
+    // Breakfast
+    {plu:'1002043',name:"Farmer's Egg + Bacon Roll",dp:'B',unit:'each'},
+    {plu:'1003667',name:'Toast Avo, Confit Tomato + Whipped Feta',dp:'B',unit:'each'},
+    {plu:'1002678',name:'Toast Avo, Cucumber + Togarashi',dp:'B',unit:'each'},
+    {plu:'1002679',name:'Toast Salmon and Egg',dp:'B',unit:'each'},
+    {plu:'1002686',name:'Bread and Butter',dp:'B',unit:'each'},
+    {plu:'1002204',name:'Croissant',dp:'B',unit:'each'},
+    {plu:'1002774',name:'Pain Au Chocolat',dp:'B',unit:'each'},
+    {plu:'1004183',name:'Pot Butter Beans, Avo + Feta',dp:'B',unit:'each'},
+    {plu:'1002772',name:'Pot Green Eggs',dp:'B',unit:'each'},
+    {plu:'1002683',name:'Pot Salmon Spinach',dp:'B',unit:'each'},
+    {plu:'1002682',name:'Pot Shak',dp:'B',unit:'each'},
+    {plu:'1002687',name:'Overnight Oats Date Tahini',dp:'B',unit:'each'},
+    {plu:'1004185',name:'Mango & Strawberries Coconut Yoghurt',dp:'B',unit:'each'},
+    {plu:'1003134',name:'Chia, Mango Coconut Yoghurt',dp:'B',unit:'each'},
+    {plu:'1004184',name:'Porridge Banana, Pecan, Date Tahini + Halva',dp:'B',unit:'each'},
+    {plu:'1002049',name:'Porridge Berry Compote',dp:'B',unit:'each'},
+    {plu:'1002047',name:'Porridge Plain',dp:'B',unit:'each'},
+    {plu:'1003021',name:'Extra Avocado',dp:'B',unit:'each'},
+    {plu:'1003018',name:'Extra Bacon',dp:'B',unit:'each'},
+    {plu:'1003022',name:'Extra Egg',dp:'B',unit:'each'},
+    {plu:'1003019',name:'Extra Salmon',dp:'B',unit:'each'},
+    // Lunch
+    {plu:'98618',name:'Kale Miso Slaw 12hr BATCH',dp:'L',unit:'kg'},
+    {plu:'1003567',name:'Feta Caesar 12hr BATCH',dp:'L',unit:'kg'},
+    {plu:'1004175',name:'Tomatoes, Butter Beans + Fennel 12hr BATCH',dp:'L',unit:'kg'},
+    {plu:'1004177',name:"J's Nicoise 12hr BATCH",dp:'L',unit:'kg'},
+    {plu:'98595',name:"Farmer's Rice",dp:'L',unit:'7kg kit'},
+    {plu:'1001699',name:"Farmer's Grains",dp:'L',unit:'batch'},
+    {plu:'1003737',name:'Sesame Cabbage 6hr BATCH',dp:'L',unit:'kg'},
+    {plu:'SPINWASp',name:'Spinach + Rocket Prep',dp:'L',unit:'kg'},
+    {plu:'EGGFR15s',name:'Eggs - Soft (Lunch)',dp:'L',unit:'each'},
+    {plu:'1000974L',name:'Avocado Extra (Lunch)',dp:'L',unit:'each'},
+    {plu:'1002285x',name:'Steak — Cooked',dp:'L',unit:'each'},
+    {plu:'1003857',name:'Lime Leaf Tofu CAST IRON',dp:'L',unit:'each'},
+    {plu:'1002546',name:'Gotcha Salmon',dp:'L',unit:'each'},
+    {plu:'1001420',name:'Harissa Chicken CAST IRON',dp:'L',unit:'each'},
+    {plu:'1003739',name:'Amba Chicken CAST IRON',dp:'L',unit:'each'},
+    {plu:'1004054',name:'Spiced Date Sweet Potato CAST IRON',dp:'L',unit:'each'},
+    {plu:'103044',name:'Mac & Cheese CAST IRON',dp:'L',unit:'each'},
+    {plu:'98635',name:'Ponzu Sesame Broccoli CAST IRON',dp:'L',unit:'each'},
+    {plu:'1003660',name:'Cauliflower CAST IRON',dp:'L',unit:'each'},
+    {plu:'1004052',name:'Charred Greens, Shrooms + Nori CAST IRON',dp:'L',unit:'each'},
+  ],
+  batches:[
+    // Breakfast
+    {plu:'1002676b',name:'Smashed Avo Breakfast',size:1000,unit:'g',dp:'B'},
+    {plu:'1002769',name:'Spinach Parmesan BATCH ≈0.95kg',size:995,unit:'g',dp:'B'},
+    {plu:'1002677',name:'Overnight Oat BATCH ≈3.6kg',size:3665,unit:'g',dp:'B'},
+    {plu:'1003133',name:'Chia Pudding Prep BATCH',size:1000,unit:'g',dp:'B'},
+    {plu:'1002037',name:'Date Tahini BATCH',size:500,unit:'g',dp:'B'},
+    {plu:'1002036',name:'Porridge BATCH',size:2000,unit:'g',dp:'B'},
+    {plu:'1003666',name:'Plum Tomato Confit BATCH',size:1500,unit:'g',dp:'B'},
+    {plu:'1003665',name:'Whipped Feta BATCH',size:800,unit:'g',dp:'B'},
+    {plu:'98578p',name:'Smoked Streaky Bacon Prep',size:1000,unit:'g',dp:'B'},
+    {plu:'EGGFR15p',name:'Eggs - Poached (Pot)',size:1,unit:'each',dp:'B'},
+    {plu:'EGGFR15r',name:'Eggs - Poached (Roll)',size:1,unit:'each',dp:'B'},
+    {plu:'EGGFR15h',name:'Eggs - Hard Boiled',size:1,unit:'each',dp:'B'},
+    {plu:'98599',name:'Egg Mayo Mix BATCH',size:1000,unit:'g',dp:'BL'},
+    {plu:'1002251p',name:'Preserved Lemon Breakfast',size:500,unit:'g',dp:'B'},
+    {plu:'1004178',name:'Mango Mix Prep',size:500,unit:'g',dp:'B'},
+    {plu:'1003958',name:'Strawberry Prep',size:500,unit:'g',dp:'B'},
+    {plu:'1003955',name:'Halva Crumble Batch',size:300,unit:'g',dp:'B'},
+    {plu:'1002767F',name:'Chopped Spinach Prep',size:500,unit:'g',dp:'B'},
+    // Lunch
+    {plu:'1003738',name:'Sesame Cucumber + Wakame Batch',size:1000,unit:'g',dp:'L'},
+    {plu:'1003737',name:'Sesame Cabbage Batch',size:1000,unit:'g',dp:'L'},
+    {plu:'1003567',name:'Feta Caesar Batch',size:2400,unit:'g',dp:'L'},
+    {plu:'98618',name:'Kale Miso Slaw Batch',size:2600,unit:'g',dp:'L'},
+    {plu:'98635p',name:'Broccoli Roasted Prep',size:1000,unit:'g',dp:'L'},
+    {plu:'1001849',name:'Mac and Cheese Prep',size:2000,unit:'g',dp:'L'},
+    {plu:'1003855',name:'Lime Leaf Dressing BATCH',size:500,unit:'g',dp:'L'},
+    {plu:'1003731',name:'Amba Dressing BATCH',size:500,unit:'g',dp:'L'},
+    {plu:'1002730',name:'Caesar Dressing BATCH',size:500,unit:'g',dp:'L'},
+    {plu:'SPINWASp',name:'Spinach + Rocket Prep',size:1000,unit:'g',dp:'L'},
+    {plu:'EGGFR15s',name:'Eggs - Soft (Lunch)',size:1,unit:'each',dp:'L'},
+    {plu:'1003659',name:'Cauliflower Roasted Prep',size:1000,unit:'g',dp:'L'},
+    {plu:'1004164',name:'Baby Potato Prep',size:1000,unit:'g',dp:'L'},
+    {plu:'1003813',name:'Butter Beans Prep',size:1000,unit:'g',dp:'L'},
+    {plu:'1004165',name:'Cabbage Roasted Prep',size:1000,unit:'g',dp:'L'},
+    {plu:'1004051',name:'Spicy Greens Veg Mix Prep',size:1000,unit:'g',dp:'L'},
+    {plu:'98628',name:'Spiced Date Sweet Potato Batch',size:1000,unit:'g',dp:'L'},
+    {plu:'1003856',name:'Lime Leaf Tofu Prep',size:1000,unit:'g',dp:'L'},
+    {plu:'1004163',name:'Nicoise Dressing BATCH',size:500,unit:'g',dp:'L'},
+    {plu:'1003730',name:'Asian Vinni Dressing BATCH',size:500,unit:'g',dp:'L'},
+    {plu:'1004175',name:'Tomatoes, Butter Beans + Fennel Batch',size:3200,unit:'g',dp:'L'},
+  ],
+  // avgSold[plu][dow 0=Sun..6=Sat] — from actual Excel AvgTable data for Holborn
+  avgSold:{
+    '1002043':[12,18,20,17,22,10,8],
+    '1003667':[8,13,3,11,14,6,4],
+    '1002678':[15,23,25,20,25,12,9],
+    '1002679':[10,18,15,14,16,8,6],
+    '1002686':[8,12,15,14,9,7,5],
+    '1002204':[3,5,4,5,4,6,4],
+    '1002774':[3,4,3,3,2,4,3],
+    '1004183':[5,6,8,7,7,4,3],
+    '1002772':[5,6,9,8,8,4,3],
+    '1002683':[6,8,9,9,9,5,4],
+    '1002682':[14,21,24,19,22,10,8],
+    '1002687':[10,16,16,16,15,8,6],
+    '1004185':[4,7,3,6,6,3,2],
+    '1003134':[4,6,4,7,8,4,3],
+    '1004184':[7,9,6,14,19,8,6],
+    '1002049':[5,6,6,8,6,4,3],
+    '1002047':[1,1,3,1,2,1,1],
+    '1003021':[3,5,5,5,6,3,2],
+    '1003018':[4,6,7,6,7,3,2],
+    '1003022':[3,5,5,5,6,3,2],
+    '1003019':[3,5,4,4,5,3,2],
+    '98618':  [6,9,8,7,9,4,3],
+    '1003567':[3,4,4,3,4,2,2],
+    '1004175':[4,6,5,5,6,3,2],
+    '1004177':[2,2,2,2,2,1,1],
+    '98595':  [4,5,5,4,5,3,2],
+    '1001699':[5,7,7,6,7,4,3],
+    '1003737':[6,8,7,6,8,4,3],
+    'SPINWASp':[4,5,4,4,5,3,2],
+    'EGGFR15s':[40,56,52,48,60,28,20],
+    '1000974L':[20,32,28,26,35,16,12],
+    '1002285x':[100,148,130,120,160,80,60],
+    '1003857':[10,15,12,12,14,7,5],
+    '1002546':[200,283,250,230,300,140,100],
+    '1001420':[22,33,30,28,35,18,12],
+    '1003739':[16,25,22,20,26,14,10],
+    '1004054':[36,53,48,44,58,28,20],
+    '103044': [8,12,10,9,12,6,4],
+    '98635':  [25,38,35,32,42,20,15],
+    '1003660':[20,30,28,25,33,16,12],
+    '1004052':[15,22,20,18,24,12,9],
+  },
+  // batch drivers: how each batch qty is calculated
+  // driver: 'B'=breakfast covers, 'L'=lunch covers, PLU=specific product qty
+  // gpc = grams per cover, gpp = grams per product unit, upp = units per product
+  batchLinks:{
+    '1002676b':{driver:'B',gpc:55},
+    '1002769': {driver:'B',gpc:30},
+    '1002677': {driver:'1002687',upp:1,batchGrams:3665},
+    '1003133': {driver:'1003134',gpp:80},
+    '1002037': {driver:'B',gpc:12},
+    '1002036': {driver:'B',gpc:80},
+    '1003666': {driver:'1003667',gpp:25},
+    '1003665': {driver:'B',gpc:20},
+    '98578p':  {driver:'1002043',gpp:40},
+    'EGGFR15p':{driver:'1004183',upp:2},
+    'EGGFR15r':{driver:'1002043',upp:1},
+    'EGGFR15h':{driver:'B',gpc:3},
+    '98599':   {driver:'B',gpc:25},
+    '1002251p':{driver:'B',gpc:8},
+    '1004178': {driver:'1004185',gpp:60},
+    '1003958': {driver:'1004185',gpp:50},
+    '1003955': {driver:'1004184',gpp:15},
+    '1002767F':{driver:'1002769',gpp:100},
+    '1003738': {driver:'L',gpc:40},
+    '1003737': {driver:'L',gpc:50},
+    '1003567': {driver:'L',gpc:60},
+    '98618':   {driver:'L',gpc:70},
+    '98635p':  {driver:'L',gpc:80},
+    '1001849': {driver:'103044',gpp:200},
+    '1003855': {driver:'1003857',gpp:30},
+    '1003731': {driver:'1003739',gpp:25},
+    '1002730': {driver:'1003567',gpp:40},
+    'SPINWASp':{driver:'L',gpc:30},
+    'EGGFR15s':{driver:'EGGFR15s',upp:1},
+    '1003659': {driver:'L',gpc:60},
+    '1004164': {driver:'L',gpc:40},
+    '1003813': {driver:'L',gpc:35},
+    '1004165': {driver:'L',gpc:45},
+    '1004051': {driver:'L',gpc:40},
+    '98628':   {driver:'1004054',gpp:80},
+    '1003856': {driver:'1003857',gpp:100},
+    '1004163': {driver:'L',gpc:15},
+    '1003730': {driver:'L',gpc:15},
+    '1004175': {driver:'L',gpc:90},
+  },
+  historicalAvgs:{
+    breakfast:[5500,7800,8200,7500,8500,4200,3000],
+    lunch:    [18000,24000,26000,23000,28000,14000,10000],
+    offpeak:  [2000,3000,2800,2600,3200,1800,1200],
+    evening:  [1000,1500,1400,1300,1600,900,600],
+  },
+  forecasts:{},
+  currentShop:'Holborn'
+};
+
+// ─── STATE ─────────────────────────────────────────────────────────────────────
+let S = JSON.parse(JSON.stringify(DEF));
+
+function save(){try{localStorage.setItem('fj3',JSON.stringify(S));}catch(e){}}
+function load(){try{const r=localStorage.getItem('fj3');if(r)S=JSON.parse(r);}catch(e){}}
+
+// ─── CALCULATION ENGINE ────────────────────────────────────────────────────────
+
+function dow(){
+  const d=document.getElementById('date-sel').value;
+  return d?new Date(d+'T12:00:00').getDay():new Date().getDay();
+}
+function dateKey(){return document.getElementById('date-sel').value;}
+
+function getFcst(){
+  const d=dow(),k=dateKey(),stored=(S.forecasts[k]||{});
+  return{
+    breakfast:stored.breakfast||S.historicalAvgs.breakfast[d]||7800,
+    lunch:stored.lunch||S.historicalAvgs.lunch[d]||24000,
+    offpeak:stored.offpeak||S.historicalAvgs.offpeak[d]||3000,
+    evening:stored.evening||S.historicalAvgs.evening[d]||1500,
+  };
+}
+function histAvg(part){return S.historicalAvgs[part][dow()]||1;}
+
+// Planned qty for a finished product
+// = ceil( avgSold × (forecastForPart / historicalAvgForPart) )
+function calcFinished(plu,part){
+  const avg=(S.avgSold[plu]||[])[dow()]||0;
+  if(!avg)return 0;
+  const f=getFcst(),h=histAvg(part);
+  return Math.ceil(avg*(h>0?f[part]/h:1));
+}
+
+// Total covers (sum of all planned items) for a day part
+function totalCovers(dp){
+  const p=dp==='B'?'breakfast':'lunch';
+  return S.products
+    .filter(x=>x.dp===dp||x.dp==='BL')
+    .reduce((s,x)=>s+calcFinished(x.plu,p),0);
+}
+
+// Batch quantity calculation
+function calcBatch(b){
+  const lnk=S.batchLinks[b.plu];
+  if(!lnk){
+    // Fallback: 30g per cover in the batch's day part
+    const covers=totalCovers(b.dp==='L'?'L':'B');
+    return covers*30;
+  }
+  const drv=lnk.driver;
+  if(drv==='B'||drv==='L'||drv==='BL'){
+    const covers=totalCovers(drv==='L'?'L':drv==='BL'?'B':drv);
+    return covers*(lnk.gpc||30);
+  }
+  // Driven by specific product
+  const prod=S.products.find(p=>p.plu===drv);
+  const part=prod?(prod.dp==='L'?'lunch':'breakfast'):'breakfast';
+  const qty=calcFinished(drv,part);
+  if(lnk.upp)return qty*lnk.upp;
+  return qty*(lnk.gpp||50);
+}
+
+function calcBatchCount(b){
+  const g=calcBatch(b);
+  if(b.unit==='each')return{full:Math.ceil(g),half:0,grams:Math.round(g)};
+  const full=Math.floor(g/b.size);
+  const rem=g%b.size;
+  const half=rem>b.size*0.4?1:0;
+  return{full:half?full:Math.ceil(g/b.size),half,grams:Math.round(g)};
+}
+
+function adjPct(part){
+  const f=getFcst(),h=histAvg(part);
+  return h?Math.round(f[part]/h*100):100;
+}
+
+// ─── RENDER ────────────────────────────────────────────────────────────────────
+
+function qPill(n){
+  const c=n>=20?'qhi':n>=8?'qme':'qlo';
+  return`<span class="qp ${c}">${n}</span>`;
+}
+
+function renderBreakfast(){
+  const d=dow(),f=getFcst(),h=histAvg('breakfast'),adj=adjPct('breakfast');
+  document.getElementById('brfst-adj').textContent=adj+'%';
+  document.getElementById('brfst-fcst').textContent=f.breakfast.toLocaleString();
+  document.getElementById('brfst-hist').textContent=h.toLocaleString();
+  document.getElementById('brfst-shop').textContent=S.currentShop;
+
+  const prods=S.products.filter(p=>p.dp==='B'||p.dp==='BL');
+  document.getElementById('bf-body').innerHTML=prods.map(p=>{
+    const avg=(S.avgSold[p.plu]||[])[d]||0;
+    const plan=calcFinished(p.plu,'breakfast');
+    return`<tr><td class="pluc">${p.plu}</td><td class="nc">${p.name}</td><td class="uc">${p.unit}</td><td>${avg||'—'}</td><td>${plan?qPill(plan):'<span style="color:var(--text3)">—</span>'}</td><td class="cbc"><input type="checkbox"></td></tr>`;
+  }).join('')||'<tr class="er"><td colspan="6">No breakfast products</td></tr>';
+
+  const bats=S.batches.filter(b=>b.dp==='B'||b.dp==='BL');
+  document.getElementById('bb-body').innerHTML=bats.map(b=>{
+    const{full,half,grams}=calcBatchCount(b);
+    const qty=b.unit==='each'?`<span class="qp qme">${full}</span>`:`<span class="qp qme">${(grams/1000).toFixed(1)} kg</span>`;
+    const bdisp=b.unit==='each'?'—':[full?`<span class="bp bf">${full} full</span>`:'',(half?`<span class="bp bh">½</span>`:'')].filter(Boolean).join(' ')||'—';
+    return`<tr><td class="pluc">${b.plu}</td><td class="nc">${b.name}</td><td class="uc">${b.unit}</td><td>${qty}</td><td>${bdisp}</td><td class="cbc"><input type="checkbox"></td></tr>`;
+  }).join('')||'<tr class="er"><td colspan="6">No breakfast batches</td></tr>';
+}
+
+function renderLunch(){
+  const d=dow(),f=getFcst(),h=histAvg('lunch'),adj=adjPct('lunch');
+  document.getElementById('lunch-adj').textContent=adj+'%';
+  document.getElementById('lunch-fcst').textContent=f.lunch.toLocaleString();
+  document.getElementById('lunch-hist').textContent=h.toLocaleString();
+  document.getElementById('lunch-shop').textContent=S.currentShop;
+
+  const prods=S.products.filter(p=>p.dp==='L'||p.dp==='BL');
+  document.getElementById('lf-body').innerHTML=prods.map(p=>{
+    const avg=(S.avgSold[p.plu]||[])[d]||0;
+    const plan=calcFinished(p.plu,'lunch');
+    const cat=((S.catering||{})[dateKey()]||{})[p.plu]||0;
+    const total=plan+cat;
+    return`<tr><td class="pluc">${p.plu}</td><td class="nc">${p.name}</td><td class="uc">${p.unit}</td><td>${avg||'—'}</td><td>${cat?`<span class="qp qlo">+${cat}</span>`:'—'}</td><td>${total?qPill(total):'<span style="color:var(--text3)">—</span>'}</td><td class="cbc"><input type="checkbox"></td></tr>`;
+  }).join('')||'<tr class="er"><td colspan="7">No lunch products</td></tr>';
+
+  const bats=S.batches.filter(b=>b.dp==='L'||b.dp==='BL');
+  document.getElementById('lb-body').innerHTML=bats.map(b=>{
+    const{full,half,grams}=calcBatchCount(b);
+    const qty=b.unit==='each'?`<span class="qp qme">${full}</span>`:`<span class="qp qme">${(grams/1000).toFixed(1)} kg</span>`;
+    const bdisp=b.unit==='each'?'—':[full?`<span class="bp bf">${full} full</span>`:'',(half?`<span class="bp bh">½</span>`:'')].filter(Boolean).join(' ')||'—';
+    return`<tr><td class="pluc">${b.plu}</td><td class="nc">${b.name}</td><td class="uc">${b.unit}</td><td>${qty}</td><td>${bdisp}</td><td class="cbc"><input type="checkbox"></td></tr>`;
+  }).join('')||'<tr class="er"><td colspan="6">No lunch batches</td></tr>';
+}
+
+function renderForecast(){
+  const d=dow(),dn=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  document.getElementById('fcst-day').textContent=dn[d];
+  const f=getFcst();
+  const parts=[{k:'breakfast',l:'Breakfast',s:'7am–11am'},{k:'lunch',l:'Lunch',s:'11am–3pm'},{k:'offpeak',l:'Off-peak',s:'3pm–5pm'},{k:'evening',l:'Evening',s:'5pm+'}];
+  document.getElementById('fcst-inputs').innerHTML=parts.map(p=>`<div class="mc"><div class="ml2">${p.l} <span style="opacity:.6">${p.s}</span></div><input class="mi" type="number" id="fi-${p.k}" value="${f[p.k]}" oninput="updateFcstTotal()"></div>`).join('');
+  updateFcstTotal();
+  const htot=parts.reduce((s,p)=>s+S.historicalAvgs[p.k][d],0);
+  const ftot=parts.reduce((s,p)=>s+f[p.k],0);
+  document.getElementById('avg-body').innerHTML=parts.map(p=>{
+    const hv=S.historicalAvgs[p.k][d];
+    const pct=htot?Math.round(hv/htot*100):0;
+    const sug=Math.round(ftot*pct/100);
+    return`<tr><td>${p.l}</td><td class="mono">£${hv.toLocaleString()}</td><td class="mono">${pct}%</td><td class="mono" style="color:var(--green);font-weight:500">£${sug.toLocaleString()}</td></tr>`;
+  }).join('');
+}
+
+function updateFcstTotal(){
+  const t=['breakfast','lunch','offpeak','evening'].reduce((s,k)=>{const e=document.getElementById('fi-'+k);return s+(e?+e.value||0:0);},0);
+  document.getElementById('fcst-total').textContent='£'+t.toLocaleString();
+}
+
+function saveForecast(){
+  const k=dateKey();
+  S.forecasts[k]={breakfast:+(document.getElementById('fi-breakfast').value)||0,lunch:+(document.getElementById('fi-lunch').value)||0,offpeak:+(document.getElementById('fi-offpeak').value)||0,evening:+(document.getElementById('fi-evening').value)||0};
+  save();renderBreakfast();renderLunch();
+  alert('Saved. Prep quantities updated.');
+}
+
+function renderProducts(){
+  const d=dow();
+  const dl={B:'<span class="tg tb">Breakfast</span>',L:'<span class="tg tl">Lunch</span>',BL:'<span class="tg tbl">Both</span>'};
+  document.getElementById('prod-body').innerHTML=S.products.map((p,i)=>`<tr><td class="pluc">${p.plu}</td><td class="nc">${p.name}</td><td>${dl[p.dp]||p.dp}</td><td class="uc">${p.unit}</td><td class="mono">${(S.avgSold[p.plu]||[])[d]||'—'}</td><td><button class="btn sm gh" onclick="removeProduct(${i})">Remove</button></td></tr>`).join('')||'<tr class="er"><td colspan="6">No products yet</td></tr>';
+}
+
+function renderBatches(){
+  const dl={B:'<span class="tg tb">B</span>',L:'<span class="tg tl">L</span>',BL:'<span class="tg tbl">B+L</span>'};
+  document.getElementById('batch-body').innerHTML=S.batches.map((b,i)=>`<tr><td class="pluc">${b.plu}</td><td class="nc">${b.name}</td><td class="mono">${b.size.toLocaleString()}</td><td class="uc">${b.unit}</td><td>${dl[b.dp]||b.dp}</td><td><button class="btn sm gh" onclick="removeBatch(${i})">Remove</button></td></tr>`).join('')||'<tr class="er"><td colspan="6">No batches yet</td></tr>';
+}
+
+function renderShops(){
+  document.getElementById('shops-body').innerHTML=S.shops.map((s,i)=>`<tr><td style="font-weight:500">${s.name}</td><td class="uc">${s.region}</td><td class="uc">${s.par}</td><td><button class="btn sm gh" onclick="removeShop(${i})">Remove</button></td></tr>`).join('')||'<tr class="er"><td colspan="4">No shops</td></tr>';
+}
+
+function populateShopSel(){
+  const sel=document.getElementById('shop-sel');
+  sel.innerHTML=S.shops.map(s=>`<option${s.name===S.currentShop?' selected':''}>${s.name}</option>`).join('');
+}
+
+// ─── ADMIN ─────────────────────────────────────────────────────────────────────
+
+function addProduct(){
+  const plu=document.getElementById('p-plu').value.trim();
+  const name=document.getElementById('p-name').value.trim();
+  const dp=document.getElementById('p-dp').value;
+  const unit=document.getElementById('p-unit').value.trim()||'each';
+  if(!plu||!name)return alert('PLU and name required');
+  if(S.products.find(p=>p.plu===plu))return alert('PLU already exists');
+  S.products.push({plu,name,dp,unit});
+  save();renderProducts();
+  ['p-plu','p-name','p-unit'].forEach(id=>document.getElementById(id).value='');
+}
+function removeProduct(i){if(!confirm('Remove "'+S.products[i].name+'"?'))return;S.products.splice(i,1);save();renderProducts();}
+
+function addBatch(){
+  const plu=document.getElementById('b-plu').value.trim();
+  const name=document.getElementById('b-name').value.trim();
+  const size=+(document.getElementById('b-size').value)||1000;
+  const unit=document.getElementById('b-unit').value.trim()||'g';
+  const dp=document.getElementById('b-dp').value;
+  if(!plu||!name)return alert('PLU and name required');
+  S.batches.push({plu,name,size,unit,dp});
+  save();renderBatches();
+  ['b-plu','b-name','b-size','b-unit'].forEach(id=>document.getElementById(id).value='');
+}
+function removeBatch(i){if(!confirm('Remove "'+S.batches[i].name+'"?'))return;S.batches.splice(i,1);save();renderBatches();}
+
+function addShop(){
+  const name=document.getElementById('s-name').value.trim();
+  const region=document.getElementById('s-region').value.trim();
+  const par=document.getElementById('s-par').value;
+  if(!name)return alert('Name required');
+  S.shops.push({name,region,par});save();populateShopSel();renderShops();
+  ['s-name','s-region'].forEach(id=>document.getElementById(id).value='');
+}
+function removeShop(i){if(!confirm('Remove "'+S.shops[i].name+'"?'))return;S.shops.splice(i,1);save();populateShopSel();renderShops();}
+
+// ─── NAVIGATION ────────────────────────────────────────────────────────────────
+
+const renderers={breakfast:renderBreakfast,lunch:renderLunch,forecast:renderForecast,products:renderProducts,batches:renderBatches,shops:renderShops};
+
+function nav(el){
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  const id=el.dataset.page;
+  document.getElementById('page-'+id).classList.add('active');
+  (renderers[id]||function(){})();
+}
+
+function onShopChange(){S.currentShop=document.getElementById('shop-sel').value;save();renderBreakfast();renderLunch();}
+
+function onDateChange(){
+  const d=document.getElementById('date-sel').value;
+  const dn=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  document.getElementById('day-badge').textContent=dn[new Date(d+'T12:00:00').getDay()];
+  renderBreakfast();renderLunch();renderForecast();
+}
+
+// ─── CSV UPLOAD ────────────────────────────────────────────────────────────────
+
+function handleCSV(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try{
+      const lines=ev.target.result.split('\n').filter(l=>l.trim());
+      if(lines.length<2)throw new Error('Empty file');
+      const hdr=lines[0].split(',').map(h=>h.trim().replace(/"/g,''));
+      const di=hdr.findIndex(h=>/saldate|date/i.test(h));
+      const si=hdr.findIndex(h=>/salesnet|sales/i.test(h));
+      const hi=hdr.findIndex(h=>/hour|time/i.test(h));
+      if(di<0||si<0)throw new Error('Cannot find SalDate or SalesNet columns');
+      const byDP={};const daySeen={};
+      for(let i=1;i<lines.length;i++){
+        const c=lines[i].split(',').map(x=>x.trim().replace(/"/g,''));
+        const sales=parseFloat(c[si])||0;if(!sales)continue;
+        const dt=new Date(c[di]);if(isNaN(dt))continue;
+        const d=dt.getDay();
+        const hr=parseInt(c[hi])||12;
+        let part='offpeak';
+        if(hr>=7&&hr<11)part='breakfast';
+        else if(hr>=11&&hr<15)part='lunch';
+        else if(hr>=17)part='evening';
+        const key=d+'-'+part;
+        byDP[key]=(byDP[key]||0)+sales;
+        daySeen[d+'-'+c[di]]=1;
+      }
+      const dayCnt=Array.from({length:7},(_,d)=>Math.max(1,Object.keys(daySeen).filter(k=>k.startsWith(d+'-')).length));
+      ['breakfast','lunch','offpeak','evening'].forEach(part=>{
+        for(let d=0;d<7;d++){
+          const v=byDP[d+'-'+part];
+          if(v)S.historicalAvgs[part][d]=Math.round(v/dayCnt[d]);
+        }
+      });
+      save();renderForecast();
+      document.getElementById('upload-status').textContent='✓ Loaded '+file.name+' ('+lines.length+' rows) — historical averages updated';
+    }catch(err){
+      document.getElementById('upload-status').textContent='Error: '+err.message;
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ─── INIT ──────────────────────────────────────────────────────────────────────
+
+load();
+
+// Set today's date
+const today=new Date();
+document.getElementById('date-sel').value=today.toISOString().split('T')[0];
+document.getElementById('day-badge').textContent=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][today.getDay()];
+
+populateShopSel();
+renderBreakfast();
+</script>
+</body>
+</html>
